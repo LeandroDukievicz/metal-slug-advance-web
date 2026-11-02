@@ -1,0 +1,9 @@
+# ROMs and game saves stay on the player's device
+*.gba
+*.sav
+*.srm
+*.state
+.DS_Store
+
+# Local test artifacts
+.playwright-mcp/
