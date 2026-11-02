@@ -1,5 +1,7 @@
-# ROMs and game saves stay on the player's device
+# Saves e dumps extras ficam fora do repositório
 *.gba
+# a ROM servida pela página acompanha o repositório
+!rom.gba
 *.sav
 *.srm
 *.state

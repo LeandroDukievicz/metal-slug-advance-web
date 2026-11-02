@@ -28,7 +28,7 @@ e todo o mapeamento pode ser alterado no menu do próprio emulador.
 | `style.css` | Layout: a tela ocupa a maior área possível mantendo 3:2 |
 | `app.js` | Baixa, verifica e entrega a ROM ao emulador |
 | `favicon.svg` | Ícone |
-| `rom.gba` | A ROM (ignorada pelo Git — veja *Publicação*) |
+| `rom.gba` | A ROM carregada automaticamente |
 
 O emulador vem do CDN `cdn.emulatorjs.org` (GPL-3.0), então é preciso internet
 para carregá-lo. O jogo em si roda local, no navegador.
@@ -86,43 +86,39 @@ funciona: o `fetch` da ROM e o `crypto.subtle` exigem um servidor.
 
 ## Publicação
 
-O `.gitignore` exclui `*.gba`. Com isso o repositório **não** distribui o jogo, e
-a página publicada cai no seletor de arquivo, onde cada pessoa usa a própria ROM.
-
-Para que a página publicada carregue a ROM sozinha, o arquivo precisaria ir junto
-no repositório — o que significa distribuir publicamente uma ROM comercial da
-SNK, prática sujeita a remoção por DMCA.
+A ROM (`rom.gba`) acompanha o repositório, para que a página publicada carregue o
+jogo sozinha. O `.gitignore` mantém `*.gba` fora do controle de versão e abre
+exceção só para ela (`!rom.gba`), de modo que o dump original não entre junto.
 
 GitHub Pages está ligado em `main` / raiz:
 <https://leandrodukievicz.github.io/metal-slug-advance-web/>
 
-## Problema conhecido: o jogo não passa do título
+> Distribuir publicamente uma ROM comercial da SNK sujeita o repositório a
+> remoção por DMCA. Decisão consciente do dono do projeto.
 
-Com esta ROM e o core **mGBA** do EmulatorJS, o jogo carrega e roda a abertura
-inteira, mas ao pressionar **Start** na tela de título ele escurece e volta para
-o título, em laço.
+## Verificação de funcionamento
 
-O que foi apurado:
+Testado de ponta a ponta no navegador: clique em **Iniciar jogo** → abertura →
+tela de título → **Start** → FILE SELECT → **A** → SOLDIER SELECT. Os três slots
+de save aparecem como `NEW` e avançam normalmente.
 
-- A entrada chega ao jogo — a tela de título faz fade-out ao receber o Start.
-- A ROM declara `EEPROM_V124` como tipo de save.
-- O mGBA **nunca cria** o arquivo de save: `/data/saves/mGBA/` fica vazio.
-- Semear um `.srm` de 8192 bytes (EEPROM 8K) e de 512 bytes não mudou nada.
-- `EJS_forceLegacyCores = true` não mudou nada.
-- Nenhum erro no console do navegador.
+A ROM foi conferida contra o dump de referência: CRC32 `3806F4AE`,
+SHA-1 `0719aee29b0da365e7ad52bb0ae9545bcd377152`, 8.388.608 bytes — e o arquivo
+entregue ao emulador tem o mesmo SHA-1, ou seja, chega íntegro ao core.
 
-Essa é a assinatura típica da checagem de memória de save / antipirataria do
-Metal Slug Advance falhando quando o emulador erra o tipo de EEPROM. O mGBA
-avulso resolve isso com *save type override* por jogo, mas o core libretro usado
-pelo EmulatorJS não expõe essa opção — não há como corrigir pela página.
+### Armadilha ao testar com automação
 
-Caminhos possíveis, em ordem de custo:
+Testes automatizados de teclado (Playwright `keyboard.press`, por exemplo)
+soltam a tecla cerca de 1 ms depois de pressioná-la. O core consulta a entrada
+uma vez por frame (~16,7 ms), então um toque assim **não é registrado** e o jogo
+parece travado na tela de título. Não é defeito do jogo nem da página.
 
-1. Testar a mesma ROM num mGBA local (`sudo apt install mgba-sdl`) para separar
-   definitivamente "ROM" de "EmulatorJS".
-2. Testar outro dump do jogo. O atual: CRC32 `3806F4AE`,
-   SHA-1 `0719aee29b0da365e7ad52bb0ae9545bcd377152`.
-3. Manter a página como está — ela funciona para outras ROMs de GBA pelo seletor.
+Dois detalhes para automatizar corretamente:
+
+- Segure a tecla por pelo menos uns 100 ms antes de soltar.
+- O EmulatorJS escuta `keydown`/`keyup` no **div pai do emulador**
+  (`EJS_emulator.elements.parent`), não em `document` nem em `window`. Eventos
+  despachados fora dali são simplesmente ignorados.
 
 ## Licença e marcas
 
