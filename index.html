@@ -14,34 +14,42 @@
   <main class="stage">
     <h1 class="title">METAL SLUG <em>ADVANCE</em></h1>
 
-    <div class="console">
-      <div class="screen">
-        <div class="launch" id="launch">
-          <div class="crosshair" aria-hidden="true"><span>+</span></div>
-          <button class="launch-button" id="start-button" type="button">INICIAR JOGO <span>↗</span></button>
-          <div class="fallback" id="fallback" hidden>
-            <p id="fallback-note">Selecione seu arquivo <strong>.gba</strong>.</p>
-            <label class="launch-button" for="rom-input">SELECIONAR ROM <span>↗</span></label>
-            <input id="rom-input" type="file" accept=".gba,application/octet-stream">
+    <div class="console-area">
+      <div class="console">
+        <div class="screen">
+          <div class="launch" id="launch">
+            <div class="crosshair" aria-hidden="true"><span>+</span></div>
+            <button class="launch-button" id="start-button" type="button">INICIAR JOGO <span>↗</span></button>
+            <div class="fallback" id="fallback" hidden>
+              <p id="fallback-note">Selecione seu arquivo <strong>.gba</strong>.</p>
+              <label class="launch-button" for="rom-input">SELECIONAR ROM <span>↗</span></label>
+              <input id="rom-input" type="file" accept=".gba,application/octet-stream">
+            </div>
           </div>
+          <div id="game" hidden></div>
         </div>
-        <div id="game" hidden></div>
-      </div>
-      <div class="console-bottom">
-        <span><span class="status-light"></span> <span id="status" role="status" aria-live="polite">PRONTO</span></span>
-        <span class="meta">GBA <b>/</b> 240 × 160</span>
+        <div class="console-bottom">
+          <span><span class="status-light"></span> <span id="status" role="status" aria-live="polite">PRONTO</span></span>
+          <div class="console-actions">
+            <button class="bar-button" id="menu-button" type="button" aria-expanded="false" aria-controls="game" hidden>MENU</button>
+            <button class="bar-button" id="fullscreen-button" type="button" hidden>TELA CHEIA</button>
+          </div>
+          <span class="meta">GBA <b>/</b> 240 × 160</span>
+        </div>
       </div>
     </div>
 
-    <ul class="controls" aria-label="Controles do teclado">
-      <li><span class="keys"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></span> MOVER</li>
-      <li><span class="keys"><kbd>Z</kbd></span> A</li>
-      <li><span class="keys"><kbd>X</kbd></span> B</li>
-      <li><span class="keys"><kbd>Q</kbd><kbd>E</kbd></span> L / R</li>
-      <li><span class="keys"><kbd>Enter</kbd></span> START</li>
-      <li><span class="keys"><kbd>V</kbd></span> SELECT</li>
-    </ul>
-    <p class="controls-note">No celular os botões aparecem na tela. Dá para remapear no menu do emulador.</p>
+    <div class="footer">
+      <ul class="controls" aria-label="Controles do teclado">
+        <li><span class="keys"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></span> MOVER</li>
+        <li><span class="keys"><kbd>Z</kbd></span> A</li>
+        <li><span class="keys"><kbd>X</kbd></span> B</li>
+        <li><span class="keys"><kbd>Q</kbd><kbd>E</kbd></span> L / R</li>
+        <li><span class="keys"><kbd>Enter</kbd></span> START</li>
+        <li><span class="keys"><kbd>V</kbd></span> SELECT</li>
+      </ul>
+      <p class="controls-note">No celular os botões aparecem na tela. Save state, trapaças e remapeamento ficam no botão MENU.</p>
+    </div>
   </main>
 </body>
 </html>

@@ -7,8 +7,11 @@
   --text:#f1f1dd;
   --accent:#d6f05b;
   --line:#465241;
-  /* Espaço ocupado por título, barras e respiros: o resto é tela de jogo. */
-  --chrome:268px;
+  /* Moldura do gabinete: recheio dos dois lados mais as bordas de 1px. */
+  --pad:10px;
+  --frame:calc(var(--pad) * 2 + 2px);
+  /* Altura fixa da barra de status: entra na conta do tamanho da tela. */
+  --bar:30px;
 }
 
 *{box-sizing:border-box}
@@ -22,14 +25,13 @@ body{
 }
 
 .stage{
-  min-height:100%;
+  height:100dvh;
   max-width:1400px;
   margin:0 auto;
-  padding:clamp(18px,3.2vh,34px) 16px;
+  padding:clamp(10px,2.2vh,26px) 16px;
   display:flex;
   flex-direction:column;
-  justify-content:center;
-  gap:clamp(14px,2.4vh,26px);
+  gap:clamp(8px,1.6vh,18px);
 }
 
 .title{
@@ -37,19 +39,29 @@ body{
   text-align:center;
   font-family:'Barlow Condensed',Impact,sans-serif;
   font-weight:900;
-  font-size:clamp(31px,5.6vw,62px);
+  font-size:clamp(22px,3.4vw,38px);
   line-height:.92;
   letter-spacing:-.01em;
 }
 .title em{color:var(--accent);font-style:normal}
 
-/* A largura máxima deriva da altura livre, então a tela cresce o quanto
-   couber sem nunca perder a proporção 3:2 nem exigir rolagem. */
+/* Sobra toda a altura que o título e a legenda não usaram. Virar container
+   de tamanho dá à tela uma medida própria para crescer, sem constante mágica. */
+.console-area{
+  flex:1 1 0;
+  min-height:0;
+  display:flex;
+  container-type:size;
+}
+
+/* A tela ocupa o maior retângulo 3:2 que cabe na área livre: limitada pela
+   largura ou pela altura, o que apertar primeiro. O gabinete acompanha. */
 .console{
-  width:100%;
-  max-width:calc((100dvh - var(--chrome)) * 1.5 + 26px);
-  margin:0 auto;
-  padding:12px;
+  --screen-w:max(160px,min(100cqw - var(--frame),(100cqh - var(--frame) - var(--bar)) * 1.5));
+  width:calc(var(--screen-w) + var(--frame));
+  max-width:100%;
+  margin:auto;
+  padding:var(--pad);
   background:var(--panel);
   border:1px solid var(--line);
   box-shadow:0 24px 60px #0006;
@@ -126,17 +138,63 @@ body{
 #game{position:absolute;inset:0;width:100%;height:100%}
 #game[hidden]{display:none}
 
+/* A barra do EmulatorJS reaparece a cada movimento do mouse sobre o jogo: uma
+   faixa no rodapé em telas largas e, abaixo de 576px, um painel de 300×260 que
+   tapa quase tudo. Aqui ela só abre pelo botão MENU. Em tela cheia o botão sai
+   de alcance, então lá o comportamento padrão continua valendo.
+   O !important é preciso porque o emulador continua marcando a barra como
+   oculta sozinho (temporizador de 3s) enquanto o menu está aberto. */
+#game:not(.is-fullscreen) .ejs_menu_bar{display:none!important}
+#game.menu-open:not(.is-fullscreen) .ejs_menu_bar{
+  display:flex!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+#game.menu-open:not(.is-fullscreen).ejs_small_screen .ejs_menu_bar{transform:translate(-50%,0)!important}
+#game.menu-open:not(.is-fullscreen).ejs_big_screen .ejs_menu_bar{transform:none!important}
+
 .console-bottom{
+  height:var(--bar);
   display:flex;
+  align-items:center;
   justify-content:space-between;
-  padding:12px 3px 2px;
+  gap:10px;
+  padding:8px 3px 0;
   font-family:'Barlow Condensed',sans-serif;
   font-weight:700;
   font-size:11px;
   letter-spacing:.12em;
   color:#9fab93;
+  white-space:nowrap;
 }
 .console-bottom b{color:var(--accent)}
+
+.console-actions{display:flex;gap:6px;margin-left:auto}
+.bar-button{
+  display:inline-flex;
+  align-items:center;
+  height:22px;
+  padding:0 10px;
+  border:1px solid var(--line);
+  border-radius:2px;
+  background:#2b362a;
+  color:#dbe6cb;
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:700;
+  font-size:11px;
+  letter-spacing:.12em;
+  cursor:pointer;
+  transition:background .2s,color .2s,border-color .2s;
+}
+.bar-button:hover,.bar-button[aria-expanded="true"]{
+  background:var(--accent);
+  border-color:var(--accent);
+  color:#151c0e;
+}
+.bar-button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.bar-button[hidden]{display:none}
+
+.footer{display:flex;flex-direction:column;align-items:center;gap:5px}
 .controls{
   list-style:none;
   margin:0;
@@ -144,7 +202,7 @@ body{
   display:flex;
   flex-wrap:wrap;
   justify-content:center;
-  gap:9px 22px;
+  gap:7px 20px;
   font-family:'Barlow Condensed',sans-serif;
   font-weight:700;
   font-size:12px;
@@ -183,18 +241,17 @@ kbd{
 }
 
 @media(max-width:700px){
-  :root{--chrome:242px}
+  :root{--pad:8px}
+  .stage{padding:clamp(8px,1.8vh,18px) 12px}
   .launch{gap:18px}
-  .console{padding:8px;max-width:calc((100dvh - var(--chrome)) * 1.5 + 18px)}
   .console-bottom .meta{display:none}
 }
 
-/* Paisagem baixa: o título encolhe para a tela continuar mandando. */
-@media(max-height:520px){
-  :root{--chrome:196px}
-  .title{font-size:clamp(20px,3.4vh,30px)}
-  .stage{gap:10px;padding:10px 12px}
+/* Paisagem baixa: título e legenda encolhem para a tela continuar mandando. */
+@media(max-height:560px){
+  .title{font-size:clamp(20px,3.6vh,30px)}
+  .stage{gap:8px;padding:8px 12px}
   .crosshair{display:none}
-  .controls{gap:6px 16px;font-size:11px}
+  .controls{gap:5px 14px;font-size:11px}
   .controls-note{display:none}
 }

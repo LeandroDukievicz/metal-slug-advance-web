@@ -17,16 +17,17 @@ Clique em **Iniciar jogo** e aguarde o carregamento.
 | `Enter` | Start |
 | `V` | Select |
 
-No celular o emulador desenha botões na tela. Gamepads USB/Bluetooth funcionam,
-e todo o mapeamento pode ser alterado no menu do próprio emulador.
+No celular o emulador desenha botões na tela. Gamepads USB/Bluetooth funcionam.
+Save state, trapaças e remapeamento ficam no botão **MENU**, na barra abaixo da
+tela; **TELA CHEIA** ao lado.
 
 ## Estrutura
 
 | Arquivo | Papel |
 | --- | --- |
-| `index.html` | Título, tela do jogo e legenda de controles |
+| `index.html` | Título, tela do jogo, barra de botões e legenda de controles |
 | `style.css` | Layout: a tela ocupa a maior área possível mantendo 3:2 |
-| `app.js` | Baixa, verifica e entrega a ROM ao emulador |
+| `app.js` | Baixa, verifica e entrega a ROM ao emulador; controla MENU e tela cheia |
 | `favicon.svg` | Ícone |
 | `rom.gba` | A ROM carregada automaticamente |
 
@@ -35,16 +36,38 @@ para carregá-lo. O jogo em si roda local, no navegador.
 
 ### Layout
 
-A tela do jogo é dimensionada pela largura (`aspect-ratio: 3/2`), com um
-`max-width` derivado da altura livre da janela:
+A `.stage` tem exatamente `100dvh` e distribui a altura entre título, gabinete e
+legenda. O gabinete fica dentro de `.console-area`, que é um *container query*
+de tamanho: ela recebe toda a sobra de altura e empresta essa medida para a
+tela, sem nenhuma constante de página:
 
 ```css
-max-width: calc((100dvh - var(--chrome)) * 1.5 + 26px);
+--screen-w: max(160px, min(
+  100cqw - var(--frame),
+  (100cqh - var(--frame) - var(--bar)) * 1.5
+));
 ```
 
-`--chrome` é o espaço de título, barra de status e legenda. Assim a tela cresce
-o quanto couber, nunca distorce e nunca exige rolagem. Os breakpoints apenas
-reajustam `--chrome`.
+A tela é o maior retângulo 3:2 que cabe na área livre — limitado pela largura ou
+pela altura, o que apertar primeiro. `--frame` é o recheio e as bordas do
+gabinete; `--bar`, a altura fixa da barra de status. Nunca distorce nem exige
+rolagem, e os breakpoints só encolhem título e legenda.
+
+### Menu do emulador
+
+A barra de botões do EmulatorJS reaparece a cada movimento do mouse sobre o
+jogo. Acima de 575px de largura ela é uma faixa no rodapé; abaixo disso vira um
+painel de 300×260 (`.ejs_small_screen .ejs_menu_bar`) que tapa quase toda a
+tela — e, como a tela aqui costuma ser estreita, ele ficava aparecendo o tempo
+todo e atrapalhando o jogo.
+
+O CSS esconde a barra e o botão **MENU** é o único jeito de abri-la. Como o
+emulador continua marcando a barra como oculta por conta própria (temporizador
+de 3s após cada `mousemove`), as regras de exibição precisam de `!important`.
+
+Em tela cheia o `#game` vira o elemento de tela cheia e o botão **MENU** sai de
+alcance, então lá a barra volta ao comportamento padrão — daí a classe
+`is-fullscreen`, atualizada no evento `fullscreenchange`.
 
 ## Verificação da ROM
 

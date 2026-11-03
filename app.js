@@ -18,9 +18,62 @@
   const fallback = document.querySelector('#fallback');
   const fallbackNote = document.querySelector('#fallback-note');
   const input = document.querySelector('#rom-input');
+  const menuButton = document.querySelector('#menu-button');
+  const fullscreenButton = document.querySelector('#fullscreen-button');
   let started = false;
 
   const setStatus = (text) => { status.textContent = text; };
+
+  // O CSS mantém a barra do EmulatorJS escondida; a classe abaixo é o que a
+  // revela. As chamadas ao emulador só mantêm o estado interno dele alinhado
+  // (cancelar o auto-ocultar, fechar submenus abertos).
+  const setMenuOpen = (open) => {
+    game.classList.toggle('menu-open', open);
+    menuButton.setAttribute('aria-expanded', String(open));
+    const menu = window.EJS_emulator?.menu;
+    if (open) menu?.open(true);
+    else menu?.close();
+  };
+
+  const showPlayerButtons = (visible) => {
+    menuButton.hidden = !visible;
+    fullscreenButton.hidden = !visible;
+    if (!visible) setMenuOpen(false);
+  };
+
+  menuButton.addEventListener('click', () => {
+    setMenuOpen(!game.classList.contains('menu-open'));
+  });
+
+  // Clicar no jogo fecha o menu, como numa barra de verdade.
+  document.addEventListener('pointerdown', (event) => {
+    if (!game.classList.contains('menu-open')) return;
+    const target = event.target;
+    if (menuButton.contains(target)) return;
+    if (target.closest?.('.ejs_menu_bar, .ejs_popup_container')) return;
+    setMenuOpen(false);
+  });
+
+  // Em tela cheia o botão MENU fica fora de alcance, então a barra do emulador
+  // volta a se comportar como de costume.
+  document.addEventListener('fullscreenchange', () => {
+    const full = document.fullscreenElement === game;
+    game.classList.toggle('is-fullscreen', full);
+    if (full) setMenuOpen(false);
+  });
+
+  fullscreenButton.addEventListener('click', () => {
+    const emulator = window.EJS_emulator;
+    const leaving = !!document.fullscreenElement;
+    setMenuOpen(false);
+    try {
+      if (emulator?.toggleFullscreen) emulator.toggleFullscreen(!leaving);
+      else if (leaving) document.exitFullscreen();
+      else game.requestFullscreen();
+    } catch {
+      // Dentro de um iframe sem permissão de tela cheia não há o que fazer.
+    }
+  });
 
   const askForFile = (reason) => {
     setStatus(reason);
@@ -105,6 +158,7 @@
     window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
     window.EJS_color = '#d6f05b';
     window.EJS_startOnLoaded = true;
+    window.EJS_ready = () => showPlayerButtons(true);
     window.EJS_onGameStart = () => setStatus('EM JOGO');
     const script = document.createElement('script');
     script.src = window.EJS_pathtodata + 'loader.js';
@@ -112,6 +166,7 @@
       started = false;
       launch.hidden = false;
       game.hidden = true;
+      showPlayerButtons(false);
       setStatus('FALHA AO CARREGAR EMULADOR');
     };
     document.body.appendChild(script);
