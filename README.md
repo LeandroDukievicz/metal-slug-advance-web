@@ -17,17 +17,18 @@ Clique em **Iniciar jogo** e aguarde o carregamento.
 | `Enter` | Start |
 | `V` | Select |
 
-No celular o emulador desenha botões na tela. Gamepads USB/Bluetooth funcionam.
-Save state, trapaças e remapeamento ficam no botão **MENU**, na barra abaixo da
-tela; **TELA CHEIA** ao lado.
+No celular o emulador desenha botões de toque numa faixa própria, fora da
+imagem do jogo — embaixo em pé, nas laterais deitado. Gamepads USB/Bluetooth
+funcionam. Save state, trapaças e remapeamento ficam no botão **MENU**, na
+barra abaixo da tela; **TELA CHEIA** ao lado.
 
 ## Estrutura
 
 | Arquivo | Papel |
 | --- | --- |
-| `index.html` | Título, tela do jogo, barra de botões e legenda de controles |
+| `index.html` | Título, tela do jogo, faixas do gamepad, barra de botões e legenda |
 | `style.css` | Layout: a tela ocupa a maior área possível mantendo 3:2 |
-| `app.js` | Baixa, verifica e entrega a ROM ao emulador; controla MENU e tela cheia |
+| `app.js` | Baixa, verifica e entrega a ROM; controla MENU, tela cheia e a faixa do gamepad |
 | `favicon.svg` | Ícone |
 | `rom.gba` | A ROM carregada automaticamente |
 
@@ -43,15 +44,38 @@ tela, sem nenhuma constante de página:
 
 ```css
 --screen-w: max(160px, min(
-  100cqw - var(--frame),
-  (100cqh - var(--frame) - var(--bar)) * 1.5
+  100cqw - var(--frame) - var(--pad-side) * 2,
+  (100cqh - var(--frame) - var(--bar) - var(--pad-bottom)) * 1.5
 ));
 ```
 
 A tela é o maior retângulo 3:2 que cabe na área livre — limitado pela largura ou
 pela altura, o que apertar primeiro. `--frame` é o recheio e as bordas do
-gabinete; `--bar`, a altura fixa da barra de status. Nunca distorce nem exige
-rolagem, e os breakpoints só encolhem título e legenda.
+gabinete; `--bar`, a altura fixa da barra de status; `--pad-side` e
+`--pad-bottom`, as faixas do gamepad virtual (zero quando ele não aparece).
+Nunca distorce nem exige rolagem, e os breakpoints só encolhem título e legenda.
+
+### Gamepad virtual
+
+O EmulatorJS desenha os botões de toque dentro do próprio player, por cima do
+jogo: no celular o direcional e o A/B cobriam a imagem e não dava para jogar.
+
+A solução é dar espaço próprio a eles. `.viewport` é uma grade cujas colunas
+laterais e linha de baixo são as faixas do gamepad, com a tela no meio; o
+`#game` é posicionado sobre a grade inteira. Daí o CSS prende o canvas à célula
+da tela e manda cada um dos quatro grupos do emulador
+(`ejs_virtualGamepad_left/right/bottom/top`) para a faixa livre. Em pé a faixa
+fica embaixo; deitado sobra largura e falta altura, então direcional e A/B vão
+para as laterais e só Select/Start/Rápido/Lento ficam numa tira rasa embaixo.
+
+Os botões continuam sendo os do emulador — só mudam de lugar — então o mapeamento
+segue valendo: A=8, B=0, L=10, R=11, Select=2, Start=3 e o direcional em 4..7.
+
+`.has-pad` é quem liga as faixas, e só entra quando o gamepad está mesmo à
+mostra. Saber isso exige um cuidado: `handleResize` exibe o gamepad por 250ms
+só para medi-lo, deixando a opacidade em 0 — é esse detalhe que separa a medição
+de uma exibição real. Observar `toggleVirtualGamepad` não bastaria, porque o
+emulador também esconde o gamepad escrevendo direto no estilo do elemento.
 
 ### Menu do emulador
 

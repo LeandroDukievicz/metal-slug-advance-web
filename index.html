@@ -16,14 +16,18 @@
 
     <div class="console-area">
       <div class="console">
-        <div class="screen">
-          <div class="launch" id="launch">
-            <div class="crosshair" aria-hidden="true"><span>+</span></div>
-            <button class="launch-button" id="start-button" type="button">INICIAR JOGO <span>↗</span></button>
-            <div class="fallback" id="fallback" hidden>
-              <p id="fallback-note">Selecione seu arquivo <strong>.gba</strong>.</p>
-              <label class="launch-button" for="rom-input">SELECIONAR ROM <span>↗</span></label>
-              <input id="rom-input" type="file" accept=".gba,application/octet-stream">
+        <!-- A tela e as faixas reservadas ao gamepad virtual. O #game cobre as
+             duas, para que os botões de toque caiam fora da imagem do jogo. -->
+        <div class="viewport">
+          <div class="screen">
+            <div class="launch" id="launch">
+              <div class="crosshair" aria-hidden="true"><span>+</span></div>
+              <button class="launch-button" id="start-button" type="button">INICIAR JOGO <span>↗</span></button>
+              <div class="fallback" id="fallback" hidden>
+                <p id="fallback-note">Selecione seu arquivo <strong>.gba</strong>.</p>
+                <label class="launch-button" for="rom-input">SELECIONAR ROM <span>↗</span></label>
+                <input id="rom-input" type="file" accept=".gba,application/octet-stream">
+              </div>
             </div>
           </div>
           <div id="game" hidden></div>

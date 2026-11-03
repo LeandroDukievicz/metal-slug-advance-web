@@ -20,6 +20,7 @@
   const input = document.querySelector('#rom-input');
   const menuButton = document.querySelector('#menu-button');
   const fullscreenButton = document.querySelector('#fullscreen-button');
+  const consoleBox = document.querySelector('.console');
   let started = false;
 
   const setStatus = (text) => { status.textContent = text; };
@@ -33,6 +34,29 @@
     const menu = window.EJS_emulator?.menu;
     if (open) menu?.open(true);
     else menu?.close();
+  };
+
+  // Reserva (ou devolve) a faixa onde o gamepad virtual cabe fora da tela. O
+  // tamanho da tela depende dela, então o emulador precisa remedir depois.
+  const syncPad = (visible) => {
+    if (consoleBox.classList.contains('has-pad') === visible) return;
+    consoleBox.classList.toggle('has-pad', visible);
+    window.EJS_emulator?.handleResize?.();
+  };
+
+  // O emulador mostra e esconde o gamepad por vários caminhos (configuração,
+  // tipo de aparelho), então o que vale é o estado do próprio elemento.
+  let watchedPad = null;
+  const watchPad = () => {
+    const pad = window.EJS_emulator?.virtualGamepad;
+    if (!pad || pad === watchedPad) return;
+    watchedPad = pad;
+    // handleResize exibe o gamepad por 250ms só para medi-lo, e nesse intervalo
+    // deixa a opacidade em 0: é o que separa a medição de uma exibição real.
+    const visible = () => pad.style.display !== 'none' && pad.style.opacity !== '0';
+    new MutationObserver(() => syncPad(visible()))
+      .observe(pad, { attributes: true, attributeFilter: ['style'] });
+    syncPad(visible());
   };
 
   const showPlayerButtons = (visible) => {
@@ -158,8 +182,14 @@
     window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
     window.EJS_color = '#d6f05b';
     window.EJS_startOnLoaded = true;
-    window.EJS_ready = () => showPlayerButtons(true);
-    window.EJS_onGameStart = () => setStatus('EM JOGO');
+    window.EJS_ready = () => {
+      showPlayerButtons(true);
+      watchPad();
+    };
+    window.EJS_onGameStart = () => {
+      setStatus('EM JOGO');
+      watchPad();
+    };
     const script = document.createElement('script');
     script.src = window.EJS_pathtodata + 'loader.js';
     script.onerror = () => {
@@ -167,6 +197,7 @@
       launch.hidden = false;
       game.hidden = true;
       showPlayerButtons(false);
+      syncPad(false);
       setStatus('FALHA AO CARREGAR EMULADOR');
     };
     document.body.appendChild(script);

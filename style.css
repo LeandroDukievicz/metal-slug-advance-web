@@ -12,6 +12,9 @@
   --frame:calc(var(--pad) * 2 + 2px);
   /* Altura fixa da barra de status: entra na conta do tamanho da tela. */
   --bar:30px;
+  /* Faixas reservadas ao gamepad virtual. Zeradas até o emulador mostrá-lo. */
+  --pad-bottom:0px;
+  --pad-side:0px;
 }
 
 *{box-sizing:border-box}
@@ -57,8 +60,11 @@ body{
 /* A tela ocupa o maior retângulo 3:2 que cabe na área livre: limitada pela
    largura ou pela altura, o que apertar primeiro. O gabinete acompanha. */
 .console{
-  --screen-w:max(160px,min(100cqw - var(--frame),(100cqh - var(--frame) - var(--bar)) * 1.5));
-  width:calc(var(--screen-w) + var(--frame));
+  --screen-w:max(160px,min(
+    100cqw - var(--frame) - var(--pad-side) * 2,
+    (100cqh - var(--frame) - var(--bar) - var(--pad-bottom)) * 1.5
+  ));
+  width:calc(var(--screen-w) + var(--pad-side) * 2 + var(--frame));
   max-width:100%;
   margin:auto;
   padding:var(--pad);
@@ -67,7 +73,18 @@ body{
   box-shadow:0 24px 60px #0006;
 }
 
+/* Tela na célula do meio; as faixas do gamepad são as colunas laterais e a
+   linha de baixo. O #game é posicionado por cima de tudo isso. */
+.viewport{
+  position:relative;
+  display:grid;
+  grid-template-columns:var(--pad-side) minmax(0,1fr) var(--pad-side);
+  grid-template-rows:minmax(0,auto) var(--pad-bottom);
+}
+
 .screen{
+  grid-column:2;
+  grid-row:1;
   position:relative;
   width:100%;
   aspect-ratio:3/2;
@@ -152,6 +169,95 @@ body{
 }
 #game.menu-open:not(.is-fullscreen).ejs_small_screen .ejs_menu_bar{transform:translate(-50%,0)!important}
 #game.menu-open:not(.is-fullscreen).ejs_big_screen .ejs_menu_bar{transform:none!important}
+
+/* --- Gamepad virtual -------------------------------------------------------
+   O EmulatorJS desenha o gamepad dentro do player, em cima do jogo: no celular
+   o direcional e os botões cobriam a imagem e não dava para jogar. Como o
+   #game agora cobre a tela MAIS as faixas vazias, basta prender o canvas à
+   área da tela e mandar cada grupo de botões para a faixa livre.
+
+   Em pé a faixa fica embaixo. Deitado sobra largura e falta altura, então os
+   grupos vão para as laterais e só Select/Start/Fast/Slow ficam numa tira
+   rasa embaixo.
+
+   O !important é preciso porque o emulador posiciona cada botão por estilo
+   embutido, calculado para o layout sobreposto. */
+
+/* O player pinta o próprio fundo de preto; como agora ele cobre também a
+   faixa do gamepad, o preto é deixado só para a tela. */
+#game{background:transparent!important}
+
+#game > .ejs_game,
+#game > .ejs_canvas_parent{
+  position:absolute!important;
+  top:0!important;
+  left:var(--pad-side)!important;
+  width:calc(100% - var(--pad-side) * 2)!important;
+  height:calc(100% - var(--pad-bottom))!important;
+}
+
+/* De caixa de altura zero a cobertura do conjunto, para que os quatro grupos
+   possam ser posicionados em coordenadas de tela + faixas. */
+#game .ejs_virtualGamepad_parent{
+  position:absolute!important;
+  inset:0!important;
+  width:auto!important;
+  height:auto!important;
+}
+
+/* L e R colados logo acima do próprio grupo, no lugar dos 90px originais. Sem
+   fontSize próprio eles herdam 30px e "ESQ"/"DIR" vazam da caixa. */
+#game .b_l,
+#game .b_r{font-size:15px!important}
+#game .b_l{top:-38px!important;left:0!important;right:auto!important}
+#game .b_r{top:-38px!important;right:0!important;left:auto!important}
+
+/* Select/Start/Rápido/Lento em 2×2; 58px de largura porque os rótulos
+   traduzidos não cabem nos 50px originais. */
+#game .b_select,
+#game .b_start,
+#game .b_speed_fast,
+#game .b_speed_slow{width:58px!important}
+#game .b_select{left:0!important;top:0!important}
+#game .b_start{left:66px!important;top:0!important}
+#game .b_speed_fast{left:0!important;top:38px!important}
+#game .b_speed_slow{left:66px!important;top:38px!important}
+
+.console.has-pad{--pad-bottom:230px}
+
+.has-pad #game .ejs_virtualGamepad_left{
+  left:6px!important;right:auto!important;top:auto!important;bottom:8px!important;
+}
+.has-pad #game .ejs_virtualGamepad_right{
+  right:6px!important;left:auto!important;top:auto!important;bottom:8px!important;
+}
+.has-pad #game .ejs_virtualGamepad_bottom{
+  left:50%!important;right:auto!important;top:auto!important;
+  bottom:calc(var(--pad-bottom) - 75px)!important;
+  margin-left:-62px!important;
+  width:124px!important;
+  height:69px!important;
+}
+
+/* Deitado e baixo: direcional e botões nas laterais, tira rasa embaixo. */
+@media (orientation:landscape) and (max-height:620px){
+  .console.has-pad{--pad-side:146px;--pad-bottom:40px}
+  .has-pad #game .ejs_virtualGamepad_left{
+    left:10px!important;bottom:calc(var(--pad-bottom) + 10px)!important;
+  }
+  .has-pad #game .ejs_virtualGamepad_right{
+    right:10px!important;bottom:calc(var(--pad-bottom) + 10px)!important;
+  }
+  .has-pad #game .ejs_virtualGamepad_bottom{
+    bottom:5px!important;
+    margin-left:-128px!important;
+    width:256px!important;
+    height:31px!important;
+  }
+  .has-pad #game .b_start{left:66px!important}
+  .has-pad #game .b_speed_fast{left:132px!important;top:0!important}
+  .has-pad #game .b_speed_slow{left:198px!important;top:0!important}
+}
 
 .console-bottom{
   height:var(--bar);
